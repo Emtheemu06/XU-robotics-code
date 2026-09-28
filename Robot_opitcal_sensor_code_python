@@ -1,0 +1,205 @@
+#region VEXcode Generated Robot Configuration
+from vex import *
+import urandom
+import math
+
+# Brain should be defined by default
+brain = Brain()
+
+# Robot configuration code
+brain_inertial = Inertial()
+optical1 = Optical(Ports.PORT1)
+left_drive_smart = Motor(Ports.PORT6, False)
+right_drive_smart = Motor(Ports.PORT10, True)
+drivetrain = SmartDrive(left_drive_smart, right_drive_smart, brain_inertial, 259.34, 320, 40, MM, 1)
+controller = Controller()
+
+
+# Wait for sensor(s) to fully initialize
+wait(100, MSEC)
+
+# generating and setting random seed
+def initializeRandomSeed():
+    wait(100, MSEC)
+    xaxis = brain_inertial.acceleration(XAXIS) * 1000
+    yaxis = brain_inertial.acceleration(YAXIS) * 1000
+    zaxis = brain_inertial.acceleration(ZAXIS) * 1000
+    systemTime = brain.timer.system() * 100
+    urandom.seed(int(xaxis + yaxis + zaxis + systemTime)) 
+
+# Initialize random seed 
+initializeRandomSeed()
+
+
+# Color to String Helper
+def convert_color_to_string(col):
+    if col == Color.RED:
+        return "red"
+    if col == Color.GREEN:
+        return "green"
+    if col == Color.BLUE:
+        return "blue"
+    if col == Color.WHITE:
+        return "white"
+    if col == Color.YELLOW:
+        return "yellow"
+    if col == Color.ORANGE:
+        return "orange"
+    if col == Color.PURPLE:
+        return "purple"
+    if col == Color.CYAN:
+        return "cyan"
+    if col == Color.BLACK:
+        return "black"
+    if col == Color.TRANSPARENT:
+        return "transparent"
+    return ""
+vexcode_initial_drivetrain_calibration_completed = False
+def calibrate_drivetrain():
+    # Calibrate the Drivetrain Inertial
+    global vexcode_initial_drivetrain_calibration_completed
+    sleep(200, MSEC)
+    brain.screen.print("Calibrating")
+    brain.screen.next_row()
+    brain.screen.print("Inertial")
+    brain_inertial.calibrate()
+    while brain_inertial.is_calibrating():
+        sleep(25, MSEC)
+    vexcode_initial_drivetrain_calibration_completed = True
+    brain.screen.clear_screen()
+    brain.screen.set_cursor(1, 1)
+
+
+# Calibrate the Drivetrain
+calibrate_drivetrain()
+
+
+
+# define variables used for controlling motors based on controller inputs
+drivetrain_needs_to_be_stopped_controller = False
+
+# define a task that will handle monitoring inputs from controller
+def rc_auto_loop_function_controller():
+    global drivetrain_needs_to_be_stopped_controller, remote_control_code_enabled
+    # process the controller input every 20 milliseconds
+    # update the motors based on the input values
+    while True:
+        if remote_control_code_enabled:
+            
+            # calculate the drivetrain motor velocities from the controller joystick axies
+            # left = axis3 + axis4
+            # right = axis3 - axis4
+            drivetrain_left_side_speed = controller.axis3.position() + controller.axis4.position()
+            drivetrain_right_side_speed = controller.axis3.position() - controller.axis4.position()
+            
+            # check if the values are inside of the deadband range
+            if abs(drivetrain_left_side_speed) < 5 and abs(drivetrain_right_side_speed) < 5:
+                # check if the motors have already been stopped
+                if drivetrain_needs_to_be_stopped_controller:
+                    # stop the drive motors
+                    left_drive_smart.stop()
+                    right_drive_smart.stop()
+                    # tell the code that the motors have been stopped
+                    drivetrain_needs_to_be_stopped_controller = False
+            else:
+                # reset the toggle so that the deadband code knows to stop the motors next
+                # time the input is in the deadband range
+                drivetrain_needs_to_be_stopped_controller = True
+            
+            # only tell the left drive motor to spin if the values are not in the deadband range
+            if drivetrain_needs_to_be_stopped_controller:
+                left_drive_smart.set_velocity(drivetrain_left_side_speed, PERCENT)
+                left_drive_smart.spin(FORWARD)
+            # only tell the right drive motor to spin if the values are not in the deadband range
+            if drivetrain_needs_to_be_stopped_controller:
+                right_drive_smart.set_velocity(drivetrain_right_side_speed, PERCENT)
+                right_drive_smart.spin(FORWARD)
+        # wait before repeating the process
+        wait(20, MSEC)
+
+# define variable for remote controller enable/disable
+remote_control_code_enabled = True
+
+rc_auto_loop_thread_controller = Thread(rc_auto_loop_function_controller)
+
+#endregion VEXcode Generated Robot Configuration
+# ------------------------------------------
+# 
+# 	Project:      VEXcode Project
+#	Author:       VEX, Emily Creed
+#	Created:      
+#	Description:  VEXcode EXP Python Project
+# 
+# ------------------------------------------
+
+# Library imports
+from vex import *
+
+# USE HUES
+
+# hue 0-20 is red
+# hue green: 61 - 140
+# hue blue: 200 - 280
+#hue yellow: 30 - 40
+
+#saw this on the internet as a possible fix for our problem
+#it wasn't but something we may want to look into
+drivetrain.set_stopping(BRAKE)
+
+#hue_see is a function input/parameter that gets passed from the actual call of the function
+#You can do the same in c++ with Return_Type Function_Name (data_type1 input1)
+#return types for most of the functions i can think of that you would be doing would be void
+#Data_type1 is like string, int, or boolean. 
+#For hue it outputs an int so if you want to pass it in it would be a data_type int
+#python just figures out what data_type your varibles are so you don't need it for function definition
+#for the block coding there should be an input to the side of the function name if I am remebering correctly
+
+def color_green_go(hue_see):
+    if hue_see >= 61 and hue_see <= 140:
+        #gets the drive speed up since we want yellow to slow it down
+        drivetrain.set_drive_velocity(75,PERCENT)
+        #my code needs to be in reverse because my drive train is messed up and I haven't fixed it yet
+        drivetrain.drive(REVERSE)
+
+def color_red_stop(hue_see):
+    if hue_see <= 20:
+        drivetrain.stop()
+
+
+def color_blue_circle(hue_see):
+    if hue_see >= 200 and hue_see <=280:
+        #function call for the dance function that is below
+        dance()
+
+#Has not been tested
+def yellow_slow_down(hue_see):
+    if hue_see >= 30 and hue_see <= 40:
+        #Slows it down since it has seen yellow
+        drivetrain.set_drive_velocity(25,PERCENT)
+        #once again my drive train code needs to be fixed which I am working on
+        drivetrain.drive(REVERSE)
+
+def main_go_stop():
+    i = False
+    #this loop will run constantly since i will always be false
+    while i == False:
+        if optical1.is_near_object() ==True:
+            color_see=optical1.hue()
+            brain.screen.print("I am seeing ", color_see)
+            #once it sees a color it will run through all of the fucntions to see if it matches the hue values
+            color_green_go(color_see)
+            color_red_stop(color_see)
+            color_blue_circle(color_see)
+            #has not been tested if it is not working then just comment it out
+            yellow_slow_down(color_see)
+
+def dance():
+    drivetrain.drive_for(FORWARD, 1, INCHES)
+    drivetrain.drive_for(REVERSE, 1 ,INCHES)
+    drivetrain.turn_for(RIGHT,360,DEGREES)
+    drivetrain.turn_for(LEFT,360,DEGREES)
+
+
+#calls the function that will run forever
+#basically calling one function that will call the other functions instead of constantly checking what color it is
+main_go_stop()
