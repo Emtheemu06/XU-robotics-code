@@ -57,13 +57,24 @@ myVariable = 0
 
 def when_started1():
     global myVariable, vexcode_brain_precision, vexcode_console_precision
-    while not  ((optical_2.hue() + optical_5.hue())/2)>150 and  ((optical_2.hue() + optical_5.hue())/2)<240:
+    optical_2.set_light_power(100, PERCENT)
+    optical_5.set_light_power(100, PERCENT)
+    while not (((optical_2.hue() + optical_5.hue())/2)>=350 or  ((optical_2.hue() + optical_5.hue())/2)<=15):
+    ## (((optical_2.hue() + optical_5.hue())/2)>=80 and  ((optical_2.hue() + optical_5.hue())/2)<=150)
+    ##((optical_2.color == Color.GREEN) and (optical_5.color==Color.GREEN))
         brain.screen.print("Not BLUE") 
         brain.screen.next_row()
-        
-
         wait (5, MSEC)
+    brain.screen.clear_screen()
+    brain.screen.set_cursor(1, 1)
     brain.screen.print("BlUE")
+    wait (1000, MSEC)
+    brain.screen.next_row()
+    brain.screen.print("optical_2: ") 
+    brain.screen.print(optical_2.brightness()) 
+    brain.screen.next_row()
+    brain.screen.print("optical_5: ")
+    brain.screen.print(optical_5.brightness())
     brain.screen.next_row()
 
 
